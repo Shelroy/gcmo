@@ -1,14 +1,16 @@
 # GCMC — Global Construction Management website
 
-Static website for gcmcgeo.com, hosted on **Cloudflare Pages** with one Pages Function for the quote form.
+Static website for gcmcgeo.com, deployed as a **Cloudflare Worker** with static assets. The Worker only handles the quote form and the branded 404 page.
 
 ```
 build.py              Generates every page in site/ from one template file
-site/                 The published website (Cloudflare Pages output directory)
+site/                 The published website (static assets)
   _headers            Caching + security headers
   _redirects          Old site URLs → new pages
   assets/             CSS, JS, fonts, images (WebP), video
-functions/api/contact.js   POST /api/contact: honeypot → Turnstile → Resend email
+worker/index.js       Worker entry: /api/contact, otherwise serves site/ (404 page for unknown URLs)
+worker/contact.js     POST /api/contact: honeypot → Turnstile → Resend email
+wrangler.jsonc        Worker config (name must match the Worker in Cloudflare)
 ```
 
 ## Editing
@@ -26,7 +28,7 @@ CSS (`site/assets/css/style.css`) and JS (`site/assets/js/main.js`) are edited d
 ## Local preview
 
 ```bash
-npx wrangler pages dev site
+npx wrangler dev
 ```
 
 For the form to work locally, create `.dev.vars` (git-ignored):
@@ -38,13 +40,14 @@ DRY_RUN=1
 
 `DRY_RUN=1` logs the email instead of sending it.
 
-## Cloudflare Pages setup
+## Cloudflare setup (Workers Builds)
 
-- **Framework preset:** None
 - **Build command:** *(leave empty)*
-- **Build output directory:** `site`
+- **Deploy command:** `npx wrangler deploy`
+- The `name` in `wrangler.jsonc` must match the Worker's name in Cloudflare.
 
-**Variables and Secrets** (Settings → Variables and Secrets, Production):
+**Variables and Secrets** (the Worker → Settings → Variables and Secrets). `keep_vars` in
+`wrangler.jsonc` keeps them when the Worker redeploys:
 
 | Name | Type | Value |
 |---|---|---|

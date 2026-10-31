@@ -1,11 +1,11 @@
 /**
- * POST /api/contact — Cloudflare Pages Function for the quote form.
+ * POST /api/contact — quote form handler, called from worker/index.js.
  *
  * 1. Drops obvious bots (hidden honeypot field).
  * 2. Verifies the Cloudflare Turnstile token server-side.
  * 3. Emails the enquiry via Resend.
  *
- * Variables (Cloudflare → Workers & Pages → this project → Settings → Variables and Secrets):
+ * Variables (Cloudflare → Workers & Pages → this Worker → Settings → Variables and Secrets):
  *   TURNSTILE_SECRET_KEY  (secret)   Turnstile widget secret key
  *   RESEND_API_KEY        (secret)   Resend API key
  *   MAIL_TO               (optional) where enquiries go, default jleegcmc@gmail.com
@@ -16,12 +16,12 @@
 const LIMITS = { name: 120, email: 200, phone: 60, service: 80, message: 5000 };
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const json = (body, status = 200) =>
+export const json = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
 
 const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-export async function onRequestPost({ request, env }) {
+export async function handleContact(request, env) {
   let form;
   try { form = await request.formData(); } catch { return json({ ok: false, error: 'bad-request' }, 400); }
 
@@ -90,11 +90,10 @@ export async function onRequestPost({ request, env }) {
   }).catch(() => null);
 
   if (!sent || !sent.ok) {
-    // Visible in Cloudflare → Workers & Pages → this project → Functions logs
+    // Visible in Cloudflare → Workers & Pages → this Worker → Observability / Logs
     console.error('Resend send failed', sent ? sent.status : 'network error', sent ? await sent.text() : '');
     return json({ ok: false, error: 'send-failed' }, 502);
   }
   return json({ ok: true });
 }
 
-export const onRequest = () => json({ ok: false, error: 'method-not-allowed' }, 405);
