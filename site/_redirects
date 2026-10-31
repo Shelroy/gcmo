@@ -1,0 +1,6 @@
+# Old site URLs → new pages
+/index.php                   /                 301
+/public/pages/gallery.html   /projects/        301
+/public/pages/contact.html   /contact          301
+/public/*                    /                 301
+/projects.html               /projects/        301

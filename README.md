@@ -1,70 +1,60 @@
-# Getting Started with Create React App
+# GCMC — Global Construction Management website
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Static website for gcmcgeo.com, hosted on **Cloudflare Pages** with one Pages Function for the quote form.
 
-## Available Scripts
+```
+build.py              Generates every page in site/ from one template file
+site/                 The published website (Cloudflare Pages output directory)
+  _headers            Caching + security headers
+  _redirects          Old site URLs → new pages
+  assets/             CSS, JS, fonts, images (WebP), video
+functions/api/contact.js   POST /api/contact: honeypot → Turnstile → Resend email
+```
 
-In the project directory, you can run:
+## Editing
 
-### `npm start`
+Pages are generated, so edit `build.py` (copy, services, FAQ, projects) and run:
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+```bash
+pip install pillow   # once
+python3 build.py
+```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+CSS (`site/assets/css/style.css`) and JS (`site/assets/js/main.js`) are edited directly; re-run `build.py` afterwards so the
+`?v=` cache-busting hash in each page updates.
 
-### `npm test`
+## Local preview
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```bash
+npx wrangler pages dev site
+```
 
-### `npm run build`
+For the form to work locally, create `.dev.vars` (git-ignored):
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```
+TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
+DRY_RUN=1
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+`DRY_RUN=1` logs the email instead of sending it.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Cloudflare Pages setup
 
-### `npm run eject`
+- **Framework preset:** None
+- **Build command:** *(leave empty)*
+- **Build output directory:** `site`
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+**Variables and Secrets** (Settings → Variables and Secrets, Production):
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+| Name | Type | Value |
+|---|---|---|
+| `TURNSTILE_SECRET_KEY` | Secret | From Cloudflare → Turnstile → your widget |
+| `RESEND_API_KEY` | Secret | From resend.com → API Keys |
+| `MAIL_TO` | Text | Where enquiries go (default `jleegcmc@gmail.com`) |
+| `MAIL_FROM` | Text | Sender on a Resend-verified domain, e.g. `GCMC Website <website@gcmcgeo.com>` |
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+Before going live:
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+1. Create a Turnstile widget for `gcmcgeo.com` and put its **site key** in `TURNSTILE_SITE_KEY` at the top of `build.py`
+   (it currently uses Cloudflare's always-pass test key), then run `python3 build.py`.
+2. Verify `gcmcgeo.com` in Resend (add its DNS records in Cloudflare), or set `MAIL_FROM` to another verified domain.
